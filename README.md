@@ -56,7 +56,3 @@ Make sure your charuco images are ready for calibration.
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests for improvements or new features.
