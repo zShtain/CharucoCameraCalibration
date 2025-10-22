@@ -2,14 +2,15 @@ import os
 import sys
 import cv2
 import json
+import datetime
 import traceback
 import matplotlib
 import numpy as np
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QIcon
+from PyQt5.QtCore import Qt, QObject, pyqtSignal
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QImage, QPixmap, QIcon, QTextCursor
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QComboBox, QPushButton, QStyledItemDelegate, QListView, QGraphicsView,
-    QFileDialog, QMessageBox, QGridLayout,    QHBoxLayout, QVBoxLayout, QGroupBox, QCheckBox, QGraphicsScene)
+    QFileDialog, QMessageBox, QGridLayout, QHBoxLayout, QVBoxLayout, QGroupBox, QCheckBox, QGraphicsScene, QTextEdit)
 
 matplotlib.use("Agg")  # use headless backend
 import matplotlib.pyplot as plt
@@ -32,6 +33,35 @@ class CenteredListDelegate(QStyledItemDelegate):
         super().initStyleOption(option, index)
         option.displayAlignment = Qt.AlignCenter
 
+
+class QTextEditLogger(QObject):
+    """Redirects stdout/stderr to a QTextEdit widget, adding timestamps and colors."""
+    text_written = pyqtSignal(str)
+
+    def __init__(self, text_edit):
+        super().__init__()
+        self._text_edit = text_edit
+        self.text_written.connect(self._append_text)
+
+    def write(self, text):
+        """Automatically called whenever something is printed."""
+        text = text.strip()
+        if text:
+            timestamp = datetime.datetime.now().strftime("[%H:%M:%S]")
+            formatted = f"<span style='color: gray;'>{timestamp}</span> {text}"
+            self.text_written.emit(formatted)
+
+    def flush(self):
+        """Required for compatibility with sys.stdout."""
+        pass
+
+    def _append_text(self, html_text):
+        """Safely append HTML-styled text with automatic scrolling."""
+        cursor = self._text_edit.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self._text_edit.moveCursor(QTextCursor.End)
+        self._text_edit.insertHtml(html_text + "<br>")
+        self._text_edit.ensureCursorVisible()
 
 
 class CalibrationGui(QWidget):
@@ -117,6 +147,21 @@ class CalibrationGui(QWidget):
         # btn_layout.addStretch()
         btn_group.setLayout(btn_layout)
         left_panel.addWidget(btn_group)
+
+        # --- Log / Console Output Textbox ---
+        self.txt_log = QTextEdit()
+        self.txt_log.setReadOnly(True)
+        self.txt_log.setPlaceholderText("Application log will appear here...")
+        self.txt_log.setMinimumHeight(120)  # adjust as needed
+        self.txt_log.setStyleSheet(""" QTextEdit {background-color: #f4f4f4; font-family: Consolas, 
+        monospace; font-size: 10pt; }""")
+        left_panel.addWidget(self.txt_log)
+
+        # --- Redirect console output to log box ---
+        self.logger = QTextEditLogger(self.txt_log)
+        sys.stdout = self.logger
+        sys.stderr = self.logger
+
         left_panel.addStretch()
 
         # --- Middle Panel ---
@@ -760,6 +805,11 @@ class CalibrationGui(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Corner Plot Error", f"Failed to plot detected corners:\n{e}")
             traceback.print_exc()
+
+    def log_message(self, text):
+        """ Append text to the log textbox and print to console as well."""
+        self.txt_log.append(text)
+        print(text)
 
 
 if __name__ == "__main__":
