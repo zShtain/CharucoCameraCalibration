@@ -2,6 +2,8 @@
 
 A Python-based camera calibration tool that uses OpenCV and PyQt5 to provide a graphical interface for calibrating cameras with Charuco boards.
 
+![Charuco Boards](assets/charucoCollage.png)
+
 ## Features
 
 - Camera calibration using OpenCV
