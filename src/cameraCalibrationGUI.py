@@ -35,7 +35,7 @@ class CenteredListDelegate(QStyledItemDelegate):
 
 
 class QTextEditLogger(QObject):
-    """Redirects stdout/stderr to a QTextEdit widget, adding timestamps and colors."""
+    """ Redirects stdout/stderr to a QTextEdit widget, adding timestamps and colors """
     text_written = pyqtSignal(str)
 
     def __init__(self, text_edit):
@@ -44,19 +44,28 @@ class QTextEditLogger(QObject):
         self.text_written.connect(self._append_text)
 
     def write(self, text):
-        """Automatically called whenever something is printed."""
+        """ Automatically called whenever something is printed """
         text = text.strip()
         if text:
             timestamp = datetime.datetime.now().strftime("[%H:%M:%S]")
-            formatted = f"<span style='color: gray;'>{timestamp}</span> {text}"
+            color = "black"
+            if "error" in text.lower():
+                color = "red"
+            elif "warning" in text.lower():
+                color = "orange"
+            elif "success" in text.lower() or "saved" in text.lower():
+                color = "green"
+
+            formatted = f"<span style='color: gray;'>{timestamp}</span> " \
+                        f"<span style='color: {color};'>{text}</span>"
             self.text_written.emit(formatted)
 
     def flush(self):
-        """Required for compatibility with sys.stdout."""
+        """ Required for compatibility with sys.stdout """
         pass
 
     def _append_text(self, html_text):
-        """Safely append HTML-styled text with automatic scrolling."""
+        """ Safely append HTML-styled text with automatic scrolling """
         cursor = self._text_edit.textCursor()
         cursor.movePosition(QTextCursor.End)
         self._text_edit.moveCursor(QTextCursor.End)
@@ -213,7 +222,7 @@ class CalibrationGui(QWidget):
         self.setLayout(main_layout)
         self.setWindowTitle("Camera Calibration GUI for Students of Photogrammetry 1 (014843)")
         self.setWindowIcon(QIcon(icon_path))
-        self.setMinimumSize(900, 600)
+        self.setMinimumSize(1280, 720)
 
         # --- Connect Buttons ---
         self.btn_load.clicked.connect(self.on_load_images)
@@ -699,7 +708,7 @@ class CalibrationGui(QWidget):
                                                             interpolation=cv2.INTER_LINEAR)
                             undistorted_color = cv2.cvtColor(scaled_undistorted, cv2.COLOR_GRAY2BGR)
                             self._show_image_in_graphicsview(undistorted_color, self.gv_image2)
-                            print(f"Displayed undistorted image for index {index}.")
+                            # print(f"Displayed undistorted image for index {index}.")
                         except Exception as e:
                             print(f"Undistortion failed for image {index}: {e}")
                             traceback.print_exc()
@@ -810,6 +819,29 @@ class CalibrationGui(QWidget):
         """ Append text to the log textbox and print to console as well."""
         self.txt_log.append(text)
         print(text)
+
+    def _save_log_to_file(self):
+        """Save the contents of the log text box to a file when the window closes."""
+        try:
+            log_text = self.txt_log.toPlainText()
+            if not log_text.strip():
+                return  # nothing to save
+
+            import os, datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_filename = os.path.join(os.path.dirname(__file__), f"calibration_log_{timestamp}.log")
+
+            with open(log_filename, "w", encoding="utf-8") as f:
+                f.write(log_text)
+
+            print(f"Log saved to {log_filename}")
+        except Exception as e:
+            print(f"Error saving log file: {e}")
+
+    def closeEvent(self, event):
+        """Triggered when the window is closed."""
+        self._save_log_to_file()
+        event.accept()
 
 
 if __name__ == "__main__":
