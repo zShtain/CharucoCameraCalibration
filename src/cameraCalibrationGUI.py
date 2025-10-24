@@ -183,6 +183,12 @@ class CalibrationGui(QWidget):
         self.list_loaded.selectionModel().selectionChanged.connect(self.on_image_selected)
         middle_panel.addWidget(self.list_loaded)
 
+        # --- Clear buttons under the listbox ---
+        self.btn_clear_all = QPushButton("Clear All")
+        self.btn_clear_selected = QPushButton("Clear Selected")
+        middle_panel.addWidget(self.btn_clear_all)
+        middle_panel.addWidget(self.btn_clear_selected)
+
         # Apply center alignment delegate
         self.list_loaded.setItemDelegate(CenteredListDelegate(self.list_loaded))
 
@@ -229,6 +235,8 @@ class CalibrationGui(QWidget):
         self.btn_run.clicked.connect(self.on_run_calibration)
         self.btn_save.clicked.connect(self.on_save)
         self._load_config_file()
+        self.btn_clear_all.clicked.connect(self.on_clear_all)
+        self.btn_clear_selected.clicked.connect(self.on_clear_selected)
 
     # ------------------------------------------------------------------
     # Functional Slots
@@ -461,6 +469,7 @@ class CalibrationGui(QWidget):
             print("Unexpected error in on_load_images:", top_e)
             print(tb)
 
+
     def on_run_calibration(self):
         """Perform camera calibration using detected ChArUco corners."""
         try:
@@ -551,6 +560,7 @@ class CalibrationGui(QWidget):
             )
             print("Calibration error:", e)
             print(tb)
+
 
     def on_save(self):
         """Save the computed camera calibration parameters to calibration.json in the image folder."""
@@ -720,6 +730,61 @@ class CalibrationGui(QWidget):
             QMessageBox.warning(self, "Display Error", f"Failed to display image:\n{e}")
 
 
+    def on_clear_all(self):
+        """Clear all loaded images, detections, and visualizations."""
+        try:
+            self.list_model.clear()
+            self.loaded_images.clear()
+            self.detected_markers.clear()
+            self.detected_corners.clear()
+
+            # Clear graphics views
+            self._clear_graphics_view(self.gv_image1)
+            self._clear_graphics_view(self.gv_image2)
+
+            # Optionally reset calibration results
+            if hasattr(self, "_cameraMatrix"):
+                del self._cameraMatrix
+            if hasattr(self, "_distCoeffs"):
+                del self._distCoeffs
+
+            print("All images and associated data cleared.")
+
+        except Exception as e:
+            print(f"Error while clearing all images: {e}")
+
+
+    def on_clear_selected(self):
+        """Remove the selected image and its corresponding data."""
+        try:
+            selected_indexes = self.list_loaded.selectedIndexes()
+            if not selected_indexes:
+                print("No image selected for removal.")
+                QMessageBox.critical(self, "No image selected for removal",
+                                     "No image selected for removal")
+                return
+
+            # Remove from the end to preserve index correctness
+            for index in sorted(selected_indexes, key=lambda x: x.row(), reverse=True):
+                row = index.row()
+                if 0 <= row < len(self.loaded_images):
+                    del self.loaded_images[row]
+                    del self.detected_markers[row]
+                    del self.detected_corners[row]
+                    self.list_model.removeRow(row)
+
+            # Clear both displays after removing a selection
+            self._clear_graphics_view(self.gv_image1)
+            self._clear_graphics_view(self.gv_image2)
+
+            # Re-draw the detected corners plot without those from the remove image
+            self._plot_detected_corners()
+
+            print("Selected images removed successfully.")
+        except Exception as e:
+            print(f"Error while removing selected image: {e}")
+
+
     def _show_image_in_graphicsview(self, img, view, scale_already_applied=False):
         """
         Display an OpenCV image in a QGraphicsView.
@@ -815,10 +880,12 @@ class CalibrationGui(QWidget):
             QMessageBox.critical(self, "Corner Plot Error", f"Failed to plot detected corners:\n{e}")
             traceback.print_exc()
 
+
     def log_message(self, text):
         """ Append text to the log textbox and print to console as well."""
         self.txt_log.append(text)
         print(text)
+
 
     def _save_log_to_file(self):
         """Save the contents of the log text box to a file when the window closes."""
@@ -838,10 +905,18 @@ class CalibrationGui(QWidget):
         except Exception as e:
             print(f"Error saving log file: {e}")
 
+
     def closeEvent(self, event):
         """Triggered when the window is closed."""
         self._save_log_to_file()
         event.accept()
+
+
+    def _clear_graphics_view(self, view):
+        """Helper to clear a QGraphicsView cleanly."""
+        scene = view.scene()
+        if scene:
+            scene.clear()
 
 
 if __name__ == "__main__":
