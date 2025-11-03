@@ -47,13 +47,65 @@ Or install from requirements.txt file
 
 ## Usage
 
-After installation, run the main application script:
+### 1. Configuration
+
+Before launching the calibration application, make sure your images with the charuco board are ready.
+If the calibration process is going to be repeated multiple times with the same Charuco board, its properties can be set via the `config.json` file.
+
+![Board Configurations](assets/config.png)
+
+For board generated using older version of OpenCV, specifically before version 4.6.0., make sure to set the `isLegacy` field to `True`.
+
+### 2. Launching the application
+
+After completing the installation and configuration, run the main application script:
 
 ```bash
 .\CamCalib\Scripts\python .\src\cameraCalibrationGUI.py
 ```
 
-Make sure your charuco images are ready for calibration.
+The application will appear with the values from the `config.json` loaded into the top-left panel of the window.
+
+![Calibration GUI](assets/gui1.png)
+
+### 3. Verify board Configuration
+
+If the configurations json was not editted before, running the application, modify the respective properties of the Charuco board.
+
+### 4. Loading the images
+
+Once the board configurations are set correctly, click the "Load Images" button. 
+After selecting the images to be used, they will be loaded and converted to grayscale.
+Then, the application will detect the Charuco markers in each image, and if successfuly will proceed to detect the board corners.
+When processing an image is done, its name will be added to the listbox in the middle.
+Finally, a scatter plot of all detected corners in all images will appear in the bottom-right part of the window.
+The conrers will be bounded by a black rectangle, representing the image boundary.
+For reliable calibration results, it is best that the detected corners will be cover the majority of the camera's field of view.
+
+**Note**: At least four corners should be detected per image, otherwise the calibration will fail.
+
+Selecting an image name from the listbox will show the image with its detected corners as blue circles.
+
+![Detected corners](assets/gui3.png)
+
+To remove an image that does not meet the required number of detected corners, click the "Clear Selected" button.
+
+### 5. Calibration
+
+Clicking the "Run Calibration" will begain the computation process. 
+
+If successful, the calibrated values will be filled in the respective textboxes, and
+selecting an image from the listbox will now show its undistorted version instead of the corner scatter plot.
+
+![Calibration Results](assets/gui5.png)
+
+Clicking on the "Save" button will save the calibration inforamtion as a json file in the same path of the loaded images.
+The resulting json file will include:
+- The camera intrinsics (the focal lengths and principal point),
+- The radial (k1, k2, k3) and tangential (p1, p2) lens distortion coefficients,
+- The overall reprojection RMS error and number of images participating in the calibration process,
+- The coordinates of the detected corners in each image.
+
 
 ## License
 
