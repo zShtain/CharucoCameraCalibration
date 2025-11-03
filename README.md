@@ -26,23 +26,23 @@ python -m venv CamCalib
 On **Windows**:
 
 ```bash
-CamCalib\Scripts activate
+.\CamCalib\Scripts\activate
 ```
 
 ### 3. Upgrade `pip`
 
 ```bash
-CamCalib\Scripts\python -m pip install --upgrade pip
+.\CamCalib\Scripts\python -m pip install --upgrade pip
 ```
 
 ### 4. Install dependencies
 
 ```bash
-CamCalib\Scripts\pip install numpy matplotlib pyqt5 opencv-contrib-python
+.\CamCalib\Scripts\pip install numpy matplotlib pyqt5 opencv-contrib-python
 ```
 Or install from requirements.txt file
 ```bash
-CamCalib\Scripts\pip install -r requirement.txt
+.\CamCalib\Scripts\pip install -r requirements.txt
 ```
 
 ## Usage
@@ -50,7 +50,7 @@ CamCalib\Scripts\pip install -r requirement.txt
 After installation, run the main application script:
 
 ```bash
-CamCalib\Scripts\python src\cameraCalibrationGUI.py
+.\CamCalib\Scripts\python .\src\cameraCalibrationGUI.py
 ```
 
 Make sure your charuco images are ready for calibration.
