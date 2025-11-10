@@ -50,7 +50,10 @@ Or install from requirements.txt file
 ### 1. Configuration
 
 Before launching the calibration application, make sure your images with the charuco board are ready.
-If the calibration process is going to be repeated multiple times with the same Charuco board, its properties can be set via the `config.json` file.
+The number of images required varies depending on the used Charuco board.
+It is best to use **a minimal number of eight images** for a reliable calibration.
+
+If the calibration process is to be repeated multiple times with the same Charuco board, its properties can be set via the `config.json` file.
 
 ![Board Configurations](assets/config.png)
 
@@ -70,7 +73,7 @@ The application will appear with the values from the `config.json` loaded into t
 
 ### 3. Verify board Configuration
 
-If the configurations json was not editted before, running the application, modify the respective properties of the Charuco board.
+If the configurations json was not editted before running the application, modify the respective properties of the Charuco board.
 
 ### 4. Loading the images
 
@@ -105,6 +108,8 @@ The resulting json file will include:
 - The radial (k1, k2, k3) and tangential (p1, p2) lens distortion coefficients,
 - The overall reprojection RMS error and number of images participating in the calibration process,
 - The coordinates of the detected corners in each image.
+
+When closing the calibration window, a log file will be created at the same folder as the application script with all the information printted in the logging textbox.
 
 
 ## License
