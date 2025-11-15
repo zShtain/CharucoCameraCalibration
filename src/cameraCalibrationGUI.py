@@ -896,9 +896,12 @@ class CalibrationGui(QWidget):
             if not log_text.strip():
                 return  # nothing to save
 
-            import os, datetime
+            # Ensure the "logs" folder exists
+            logsPath = os.path.join(os.path.dirname(__file__), 'logs')
+            os.makedirs(logsPath, exist_ok=True)
+
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            log_filename = os.path.join(os.path.dirname(__file__), f"calibration_log_{timestamp}.log")
+            log_filename = os.path.join(logsPath, f"calibration_log_{timestamp}.log")
 
             with open(log_filename, "w", encoding="utf-8") as f:
                 f.write(log_text)

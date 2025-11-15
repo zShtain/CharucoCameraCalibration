@@ -50,14 +50,14 @@ Or install from requirements.txt file
 ### 1. Configuration
 
 Before launching the calibration application, make sure your images with the charuco board are ready.
-The number of images required varies depending on the used Charuco board.
+The number of images required varies depending on the Charuco board used.
 It is best to use **a minimal number of eight images** for a reliable calibration.
 
 If the calibration process is to be repeated multiple times with the same Charuco board, its properties can be set via the `config.json` file.
 
 ![Board Configurations](assets/config.png)
 
-For board generated using older version of OpenCV, specifically before version 4.6.0., make sure to set the `isLegacy` field to `True`.
+For boards generated using older versions of OpenCV, specifically before version 4.6.0, make sure to set the `isLegacy` field to `True`.
 
 ### 2. Launching the application
 
@@ -71,7 +71,7 @@ The application will appear with the values from the `config.json` loaded into t
 
 ![Calibration GUI](assets/gui1.png)
 
-### 3. Verify board Configuration
+### 3. Verify board configuration
 
 If the configurations json was not editted before running the application, modify the respective properties of the Charuco board.
 
@@ -82,10 +82,10 @@ After selecting the images to be used, they will be loaded and converted to gray
 Then, the application will detect the Charuco markers in each image, and if successfuly will proceed to detect the board corners.
 When processing an image is done, its name will be added to the listbox in the middle.
 Finally, a scatter plot of all detected corners in all images will appear in the bottom-right part of the window.
-The conrers will be bounded by a black rectangle, representing the image boundary.
-For reliable calibration results, it is best that the detected corners will be cover the majority of the camera's field of view.
+The corners will be bounded by a black rectangle, representing the image boundary.
+For reliable calibration results, it is best that the detected corners cover the majority of the camera's field of view.
 
-**Note**: At least four corners should be detected per image, otherwise the calibration will fail.
+**Note**: At least four corners should be detected per image; otherwise, the calibration will fail.
 
 Selecting an image name from the listbox will show the image with its detected corners as blue circles.
 
@@ -95,10 +95,10 @@ To remove an image that does not meet the required number of detected corners, c
 
 ### 5. Calibration
 
-Clicking the "Run Calibration" will begain the computation process. 
+Clicking the "Run Calibration" will begin the computation process. 
 
 If successful, the calibrated values will be filled in the respective textboxes, and
-selecting an image from the listbox will now show its undistorted version instead of the corner scatter plot.
+Selecting an image from the listbox will now show its undistorted version instead of the corner scatter plot.
 
 ![Calibration Results](assets/gui5.png)
 
@@ -109,7 +109,8 @@ The resulting json file will include:
 - The overall reprojection RMS error and number of images participating in the calibration process,
 - The coordinates of the detected corners in each image.
 
-When closing the calibration window, a log file will be created at the same folder as the application script with all the information printted in the logging textbox.
+When closing the calibration window, a log file will be created under a subfolder named `logs` next to the application script.
+The saved logf file witll contain all the printed information from the logging textbox.
 
 
 ## License
