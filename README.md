@@ -109,8 +109,8 @@ The resulting json file will include:
 - The overall reprojection RMS error and number of images participating in the calibration process,
 - The coordinates of the detected corners in each image.
 
-When closing the calibration window, a log file will be created under a subfolder named `logs` next to the application script.
-The saved logf file witll contain all the printed information from the logging textbox.
+When closing the calibration window, a log file will be created under a subfolder named `logs`, next to the application script.
+The saved log file witll contain all the printed information from the logging textbox.
 
 
 ## License
