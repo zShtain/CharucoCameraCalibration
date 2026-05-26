@@ -8,8 +8,22 @@ A Python-based camera calibration tool that uses OpenCV and PyQt5 to provide a g
 
 - Camera calibration using OpenCV
 - GUI built with PyQt5
+- MVC architecture (Model / View / Controller)
 - Visualization of calibration results
 - Easy setup with Python virtual environment
+
+## Project Structure
+
+```
+src/
+  main.py                  — entry point
+  CalibrationModel.py      — data, OpenCV calibration logic, Qt signals
+  CalibrationView.py       — all Qt widgets and display methods
+  CalibrationController.py — orchestration, input validation, rendering
+  config/
+    config.json            — default board parameters
+  logs/                    — session logs (auto-saved on close)
+```
 
 ## Installation
 
@@ -64,7 +78,7 @@ For boards generated using older versions of OpenCV, specifically before version
 After completing the installation and configuration, run the main application script:
 
 ```bash
-.\CamCalib\Scripts\python .\src\cameraCalibrationGUI.py
+.\CamCalib\Scripts\python .\src\main.py
 ```
 
 The application will appear with the values from the `config.json` loaded into the top-left panel of the window.
