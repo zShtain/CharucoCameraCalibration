@@ -1,18 +1,44 @@
-# Charuco Camera Calibration
+<p align="center">
+  <img src="assets/charucoCollage.png" alt="ChArUco Boards" width="700"/>
+</p>
 
-A Python-based camera calibration tool that uses OpenCV and PyQt5 to provide a graphical interface for calibrating cameras with Charuco boards.
+<h1 align="center">Charuco Camera Calibration</h1>
 
-![Charuco Boards](assets/charucoCollage.png)
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.x-blue?logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/OpenCV-4.x-red?logo=opencv&logoColor=white"/>
+  <img src="https://img.shields.io/badge/PyQt5-5.x-41CD52?logo=qt&logoColor=white"/>
+  <img src="https://img.shields.io/badge/license-MIT-green"/>
+</p>
 
-## Features
+<p align="center">
+  A GUI tool for camera intrinsic calibration using ChArUco boards, built with OpenCV and PyQt5.
+</p>
 
-- Camera calibration using OpenCV
-- GUI built with PyQt5
-- MVC architecture (Model / View / Controller)
-- Visualization of calibration results
-- Easy setup with Python virtual environment
+---
 
-## Project Structure
+## 📋 Table of Contents
+
+- [✨ Features](#-features)
+- [🗂 Project Structure](#-project-structure)
+- [⚙️ Installation](#️-installation)
+- [🚀 Usage](#-usage)
+- [📄 License](#-license)
+
+---
+
+## ✨ Features
+
+- 📐 Camera intrinsic calibration via ChArUco boards (OpenCV)
+- 🖥️ PyQt5 GUI with live corner visualization
+- 🏗️ MVC architecture (Model / View / Controller)
+- 📊 Scatter plot of detected corners across all loaded images
+- 🔧 JSON config file for repeatable board setups
+- 📝 Auto-saved session log on close
+
+---
+
+## 🗂 Project Structure
 
 ```
 src/
@@ -25,9 +51,12 @@ src/
   logs/                    — session logs (auto-saved on close)
 ```
 
-## Installation
+---
 
-Follow these steps to set up the project:
+## ⚙️ Installation
+
+<details>
+<summary><b>Show installation steps</b></summary>
 
 ### 1. Create a virtual environment
 
@@ -54,79 +83,95 @@ On **Windows**:
 ```bash
 .\CamCalib\Scripts\pip install numpy matplotlib pyqt5 opencv-contrib-python
 ```
-Or install from requirements.txt file
+
+Or install from `requirements.txt`:
+
 ```bash
 .\CamCalib\Scripts\pip install -r requirements.txt
 ```
 
-## Usage
+</details>
 
-### 1. Configuration
+---
 
-Before launching the calibration application, make sure your images with the charuco board are ready.
-The number of images required varies depending on the Charuco board used.
-It is best to use **a minimal number of eight images** for a reliable calibration.
+## 🚀 Usage
 
-If the calibration process is to be repeated multiple times with the same Charuco board, its properties can be set via the `config.json` file.
+### ⚙️ 1. Configuration
+
+Before launching the application, make sure your images with the ChArUco board are ready.
+It is best to use **at least eight images** for a reliable calibration.
+
+If the calibration process is to be repeated multiple times with the same ChArUco board, its properties can be set via `src/config/config.json`:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `nSquaresX` | `int` | `4` | Number of chessboard squares along X |
+| `nSquaresY` | `int` | `6` | Number of chessboard squares along Y |
+| `sqrLength` | `float` | `0.042` | Side length of a chessboard square (meters) |
+| `markerLength` | `float` | `0.031` | Side length of an ArUco marker (meters) |
+| `dictName` | `string` | `DICT_6X6_250` | ArUco dictionary name |
+| `isLegacy` | `bool` | `true` | Set `true` for boards made with OpenCV < 4.6.0 |
 
 ![Board Configurations](assets/config.png)
 
-For boards generated using older versions of OpenCV, specifically before version 4.6.0, make sure to set the `isLegacy` field to `True`.
+> For boards generated using older versions of OpenCV (before 4.6.0), make sure to set `isLegacy` to `true`.
 
-### 2. Launching the application
-
-After completing the installation and configuration, run the main application script:
+### 🚀 2. Launching the application
 
 ```bash
 .\CamCalib\Scripts\python .\src\main.py
 ```
 
-The application will appear with the values from the `config.json` loaded into the top-left panel of the window.
+The application will open with the values from `config.json` pre-loaded into the left panel.
 
 ![Calibration GUI](assets/gui1.png)
 
-### 3. Verify board configuration
+### ✅ 3. Verify board configuration
 
-If the configurations json was not editted before running the application, modify the respective properties of the Charuco board.
+If the config was not edited before launching, modify the board properties directly in the left panel before proceeding.
 
-### 4. Loading the images
+### 📂 4. Loading the images
 
-Once the board configurations are set correctly, click the "Load Images" button. 
-After selecting the images to be used, they will be loaded and converted to grayscale.
-Then, the application will detect the Charuco markers in each image, and if successfuly will proceed to detect the board corners.
-When processing an image is done, its name will be added to the listbox in the middle.
-Finally, a scatter plot of all detected corners in all images will appear in the bottom-right part of the window.
-The corners will be bounded by a black rectangle, representing the image boundary.
-For reliable calibration results, it is best that the detected corners cover the majority of the camera's field of view.
+Click **Load Images** and select the images to use. The application will:
 
-**Note**: At least four corners should be detected per image; otherwise, the calibration will fail.
+1. Load and convert each image to grayscale
+2. Detect ArUco markers in each image
+3. Interpolate ChArUco board corners from the detected markers
+4. Add each processed image name to the list in the middle panel
+5. Display a scatter plot of all detected corners in the right panel
 
-Selecting an image name from the listbox will show the image with its detected corners as blue circles.
+The corners are bounded by a black rectangle representing the image boundary.
+For reliable results, the detected corners should cover the **majority of the camera's field of view**.
+
+> **Note:** At least four corners must be detected per image; images below this threshold are excluded from calibration.
+
+Clicking an image name in the list will show the image with its detected corners overlaid as blue circles.
 
 ![Detected corners](assets/gui3.png)
 
-To remove an image that does not meet the required number of detected corners, click the "Clear Selected" button.
+To remove an image with insufficient corners, select it and click **Clear Selected**.
 
-### 5. Calibration
+### 📐 5. Calibration
 
-Clicking the "Run Calibration" will begin the computation process. 
+Click **Run Calibration** to start the computation. If successful:
 
-If successful, the calibrated values will be filled in the respective textboxes, and
-Selecting an image from the listbox will now show its undistorted version instead of the corner scatter plot.
+- The intrinsic parameters and distortion coefficients are filled into the results panel
+- Selecting an image from the list now shows its undistorted version in the right panel
 
 ![Calibration Results](assets/gui5.png)
 
-Clicking on the "Save" button will save the calibration inforamtion as a json file in the same path of the loaded images.
-The resulting json file will include:
-- The camera intrinsics (the focal lengths and principal point),
-- The radial (k1, k2, k3) and tangential (p1, p2) lens distortion coefficients,
-- The overall reprojection RMS error and number of images participating in the calibration process,
-- The coordinates of the detected corners in each image.
+Click **Save** to export the calibration as `calibration.json` in the same folder as the loaded images. The file includes:
 
-When closing the calibration window, a log file will be created under a subfolder named `logs`, next to the application script.
-The saved log file witll contain all the printed information from the logging textbox.
+- Camera intrinsics (focal lengths and principal point)
+- Radial distortion coefficients (k1, k2, k3)
+- Tangential distortion coefficients (p1, p2)
+- Overall reprojection RMS error and number of images used
+- Detected corner coordinates per image
 
+> When the window is closed, a log file is automatically saved to `src/logs/`.
 
-## License
+---
+
+## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
