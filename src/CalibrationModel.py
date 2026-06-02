@@ -76,16 +76,50 @@ class CalibrationModel(QObject):
         self.detected_corners.clear()
         self.image_names.clear()
 
+        # --- Pass 1: read images and validate dimensions (with 90° rotation rescue) ---
+        raw = []  # list of validated (filename, img, was_rotated) tuples
+        reference_shape = None
         for file_path in file_paths:
-            try:
-                img = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
-                if img is None:
-                    self.log_message.emit(f"Warning: Could not read {file_path}")
-                    continue
+            img = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+            if img is None:
+                self.log_message.emit(f"Warning: Could not read {file_path}")
+                continue
 
-                filename = os.path.splitext(os.path.basename(file_path))[0]
+            filename = os.path.splitext(os.path.basename(file_path))[0]
+            was_rotated = False
+
+            if reference_shape is None:
+                reference_shape = img.shape[:2]
+            elif img.shape[:2] != reference_shape:
+                if img.shape[:2] == reference_shape[::-1]:
+                    # Transposed dimensions — a 90° rotation aligns it with the reference.
+                    # The log is deferred to Pass 2 so it only appears for images that
+                    # are actually committed (the whole batch may still be aborted below).
+                    img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+                    was_rotated = True
+                else:
+                    ref_h, ref_w = reference_shape
+                    h, w = img.shape[:2]
+                    self.error_occurred.emit(
+                        "Image Dimension Mismatch",
+                        f"All images must share the same dimensions.\n\n"
+                        f"Expected {ref_w}x{ref_h}, but '{filename}' is {w}x{h} "
+                        f"(a 90° rotation would not fix it).\n\nNo images were loaded.")
+                    return
+
+            raw.append((filename, img, was_rotated))
+
+        if not raw:
+            self.log_message.emit("No readable images selected.")
+            return
+
+        # --- Pass 2: detect ChArUco corners in each validated image ---
+        for filename, img, was_rotated in raw:
+            try:
                 self.loaded_images.append(img)
                 self.image_names.append(filename)
+                if was_rotated:
+                    self.log_message.emit(f"{filename}: rotated 90° to match reference dimensions.")
 
                 try:
                     corners, ids, _ = cv2.aruco.detectMarkers(img, self._aruco_dict)
@@ -114,7 +148,7 @@ class CalibrationModel(QObject):
                     self.detected_corners.append((None, None))
 
             except Exception as e:
-                self.log_message.emit(f"Unexpected error processing {file_path}: {e}")
+                self.log_message.emit(f"Unexpected error processing {filename}: {e}")
                 continue
 
         self.last_image_dir = os.path.dirname(file_paths[0]) if file_paths else ""
