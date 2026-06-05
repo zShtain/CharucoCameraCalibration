@@ -9,6 +9,8 @@ from PyQt5.QtWidgets import (
     QListView, QGraphicsView, QMessageBox, QGridLayout, QHBoxLayout, QVBoxLayout,
     QGroupBox, QCheckBox, QGraphicsScene, QTextEdit)
 
+from theme import COLORS
+
 icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "technion.png")
 
 
@@ -37,14 +39,14 @@ class QTextEditLogger(QObject):
         text = text.strip()
         if text:
             timestamp = datetime.datetime.now().strftime("[%H:%M:%S]")
-            color = "black"
+            color = COLORS["text2"]
             if "error" in text.lower():
-                color = "red"
+                color = COLORS["error"]
             elif "warning" in text.lower():
-                color = "orange"
+                color = COLORS["warning"]
             elif "success" in text.lower() or "saved" in text.lower():
-                color = "green"
-            formatted = (f"<span style='color: gray;'>{timestamp}</span> "
+                color = COLORS["success"]
+            formatted = (f"<span style='color: {COLORS['muted2']};'>{timestamp}</span> "
                          f"<span style='color: {color};'>{text}</span>")
             self.text_written.emit(formatted)
 
@@ -134,8 +136,9 @@ class CalibrationView(QWidget):
         self._txt_log.setReadOnly(True)
         self._txt_log.setPlaceholderText("Application log will appear here...")
         self._txt_log.setMinimumHeight(120)
-        self._txt_log.setStyleSheet("""QTextEdit {background-color: #f4f4f4;
-        font-family: Consolas, monospace; font-size: 10pt;}""")
+        self._txt_log.setStyleSheet(
+            f"QTextEdit {{background-color: {COLORS['bg_alt']}; color: {COLORS['text2']};"
+            f"font-family: Consolas, monospace; font-size: 10pt;}}")
         left_panel.addWidget(self._txt_log)
 
         self._logger = QTextEditLogger(self._txt_log)
