@@ -6,3 +6,6 @@
 .idea/.gitignore
 /src/tmp/
 /src/logs/
+/.claude
+/src/__pycache__
+/.idea
