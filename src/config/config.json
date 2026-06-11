@@ -1,8 +1,17 @@
 {
-  "nSquaresX": 4,
-  "nSquaresY": 6,
-  "sqrLength": 0.042,
-  "markerLength": 0.031,
-  "dictName": "DICT_6X6_250",
-  "isLegacy": true
+  "board": {
+    "nSquaresX": 4,
+    "nSquaresY": 6,
+    "sqrLength": 0.042,
+    "markerLength": 0.031,
+    "dictName": "DICT_6X6_250",
+    "isLegacy": true
+  },
+  "outlierRemoval": {
+    "reprojectionErrorThreshold": 1.0,
+    "maxOutlierRemovalIterations": 3,
+    "maxNormalizedReprojectionError": 2,
+    "minImageInlierPct": 0.5,
+    "minImageNum": 4
+  }
 }

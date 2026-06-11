@@ -22,7 +22,7 @@
 - [✨ Features](#-features)
 - [🗂 Project Structure](#-project-structure)
 - [⚙️ Installation](#️-installation)
-- [🚀 Usage](#-usage)
+- [🕹️ Usage](#-usage)
 - [📄 License](#-license)
 
 ---
@@ -33,6 +33,7 @@
 - 🖥️ PyQt5 GUI with live corner visualization
 - 🏗️ MVC architecture (Model / View / Controller)
 - 📊 Scatter plot of detected corners across all loaded images
+- 🎯 Automatic outlier rejection — iteratively dropping high-error images for robust computation
 - 🔧 JSON config file for repeatable board setups
 - 📝 Auto-saved session log on close
 
@@ -94,14 +95,15 @@ Or install from `requirements.txt`:
 
 ---
 
-## 🚀 Usage
+## 🛠️ Usage
 
 ### ⚙️ 1. Configuration
 
 Before launching the application, make sure your images with the ChArUco board are ready.
 It is best to use **at least eight images** for a reliable calibration.
 
-If the calibration process is to be repeated multiple times with the same ChArUco board, its properties can be set via `src/config/config.json`:
+#### 🏁 1.1 ChArUco board configuration
+If the calibration process is to be repeated multiple times with the same ChArUco board, its properties can be set in the `board` section of `src/config/config.json`:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -115,6 +117,20 @@ If the calibration process is to be repeated multiple times with the same ChArUc
 ![Board Configurations](assets/config.png)
 
 > For boards generated using older versions of OpenCV (before 4.6.0), make sure to set `isLegacy` to `true`.
+
+#### 🧐 1.2 Outlier removal configuration
+
+For acheiving a robust and accurate calibration, an outlier removal procedure was developed where its parameters can be set in the `outlierRemoval` section of `src/config/config.json`:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `reprojectionErrorThreshold` | `float` | `1.0` | Threshold for starting the outlier pruning |
+| `maxOutlierRemovalIterations` | `int` | `3` | Maximum number of attempts to remove outliers |
+| `maxNormalizedReprojectionError` | `float` | `2.0` | Maximum allowed normalized reporjection error |
+| `minImageInlierPct` | `float` | `0.5` | Minimum percentage of images that can be considered as inliers |
+| `minImageNum` | `int` | `4` | Minimum number of images for calibration |
+
+> To disable the outlier removal (not recommended), set `reprojectionErrorThreshold` to a number greater than `10.0`.
 
 ### 🚀 2. Launching the application
 
@@ -174,7 +190,8 @@ Click **Save** to export the calibration as `calibration.json` in the same folde
 - Overall reprojection RMS error and number of images used
 - Detected corner coordinates per image
 
-> When the window is closed, a log file is automatically saved to `src/logs/`.
+> When the window is closed, a log file is automatically saved to at the same folder as the calibration results were saved at.
+> If the calibration was not saved than the `src/logs/` folder is used to save the log file.
 
 ---
 

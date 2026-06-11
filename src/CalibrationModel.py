@@ -5,11 +5,13 @@ import traceback
 import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal
 
-reprojectionErrorThreshold = 1.0
-maxOutlierRemovalIterations = 3
-maxNormalizedReprojectionError = 2
-minImageInlierPct = 0.5
-minImageNum = 4
+DEFAULT_OUTLIER_PARAMS = {
+    "reprojectionErrorThreshold": 1.0,
+    "maxOutlierRemovalIterations": 3,
+    "maxNormalizedReprojectionError": 2,
+    "minImageInlierPct": 0.5,
+    "minImageNum": 4,
+}
 
 class CalibrationModel(QObject):
     log_message = pyqtSignal(str)
@@ -35,9 +37,10 @@ class CalibrationModel(QObject):
         self.std_dev_extrinsics = None
         self.per_view_errors = None
         self.last_image_dir = ""
+        self.outlier_params = dict(DEFAULT_OUTLIER_PARAMS)
 
     def load_config(self):
-        """ Load config/config.json and return as dict. Returns {} on failure. """
+        """ Load config/config.json and return the board settings dict. Returns {} on failure. """
         config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "config.json")
         if not os.path.isfile(config_path):
             self.log_message.emit("No config.json found — using default GUI values.")
@@ -45,12 +48,21 @@ class CalibrationModel(QObject):
         try:
             with open(config_path, "r") as f:
                 cfg = json.load(f)
+
+            # outlierRemoval: optional — keep defaults for any missing key
+            op = cfg.get("outlierRemoval", {})
+            for k in self.outlier_params:
+                if k in op:
+                    self.outlier_params[k] = op[k]
+
+            # board: required
+            board = cfg.get("board", {})
             for k in ["nSquaresX", "nSquaresY", "sqrLength", "markerLength", "dictName", "isLegacy"]:
-                if k not in cfg:
-                    self.log_message.emit(f"Config missing key: {k}")
+                if k not in board:
+                    self.log_message.emit(f"Config missing board key: {k}")
                     return {}
             self.log_message.emit(f"Configuration loaded from {config_path}")
-            return cfg
+            return board
         except Exception as e:
             self.log_message.emit(f"Error reading config.json: {e}")
             return {}
@@ -172,7 +184,7 @@ class CalibrationModel(QObject):
             self.error_occurred.emit("Error", "No images loaded.")
             return
 
-        if len(self.loaded_images) < minImageNum:
+        if len(self.loaded_images) < self.outlier_params["minImageNum"]:
             self.error_occurred.emit("Error", "Insufficient number of images for calibration. Please load more images.")
 
         all_corners, all_ids, image_size = [], [], None
@@ -198,23 +210,25 @@ class CalibrationModel(QObject):
 
             nImagesInUse = len(self.loaded_images)
             keepImgIdx = np.arange(nImagesInUse)
-            if retval > reprojectionErrorThreshold:
+            if retval > self.outlier_params["reprojectionErrorThreshold"]:
                 self.log_message.emit(f"Reprojection error ({retval:.4}) > allowed threshold "
-                                      f"({reprojectionErrorThreshold:.4})... Removing outilers")
+                                      f"({self.outlier_params['reprojectionErrorThreshold']:.4})... Removing outilers")
 
                 # outlier removal based on per view reprojection error
-                for itr in range(maxOutlierRemovalIterations):
+                for itr in range(self.outlier_params["maxOutlierRemovalIterations"]):
                     # computing normalized per view reprojection error values
                     perViewMedian = np.median(per_view)
                     perViewMAD = np.median(np.abs(per_view - perViewMedian))
                     normPerView = np.abs(per_view.reshape((-1, )) - perViewMedian) / (1.428 * perViewMAD)
 
                     # keeping images with small normalized reprojection errors
-                    keepImgIdx = keepImgIdx[np.nonzero(normPerView < maxNormalizedReprojectionError)[0]]
+                    keepImgIdx = keepImgIdx[np.nonzero(normPerView <
+                                                       self.outlier_params["maxNormalizedReprojectionError"])[0]]
 
-                    # terminating if no images were removed from previous iteration or if too many images were removed
-                    if (keepImgIdx.shape[0] == nImagesInUse or keepImgIdx.shape[0] < minImageNum or
-                        keepImgIdx.shape[0] <= minImageInlierPct * len(self.loaded_images)):
+                    # terminating if no images were removed from previous iteration or if too few images remain
+                    if (keepImgIdx.shape[0] == nImagesInUse or
+                        keepImgIdx.shape[0] < self.outlier_params["minImageNum"] or
+                        keepImgIdx.shape[0] <= self.outlier_params["minImageInlierPct"] * len(self.loaded_images)):
                         break
 
                     nImagesInUse = keepImgIdx.shape[0]  # updating number of images for calibration
