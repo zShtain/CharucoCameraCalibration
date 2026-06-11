@@ -9,3 +9,5 @@
 /.claude
 /src/__pycache__
 /.idea
+/assets/__pycache__
+assets/_gen_screenshots.py

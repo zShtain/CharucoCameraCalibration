@@ -143,6 +143,8 @@ Click **Load Images** and select the images to use. The application will:
 The corners are bounded by a black rectangle representing the image boundary.
 For reliable results, the detected corners should cover the **majority of the camera's field of view**.
 
+![Loaded images and corner scatter](assets/gui2.png)
+
 > **Note:** At least four corners must be detected per image; images below this threshold are excluded from calibration.
 
 Clicking an image name in the list will show the image with its detected corners overlaid as blue circles.
@@ -158,7 +160,11 @@ Click **Run Calibration** to start the computation. If successful:
 - The intrinsic parameters and distortion coefficients are filled into the results panel
 - Selecting an image from the list now shows its undistorted version in the right panel
 
-![Calibration Results](assets/gui5.png)
+![Calibration Results](assets/gui4.png)
+
+Selecting an image after calibration shows its detected corners alongside the undistorted result:
+
+![Undistorted view](assets/gui5.png)
 
 Click **Save** to export the calibration as `calibration.json` in the same folder as the loaded images. The file includes:
 
