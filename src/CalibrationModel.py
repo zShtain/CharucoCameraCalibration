@@ -2,8 +2,14 @@ import os
 import cv2
 import json
 import traceback
+import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal
 
+reprojectionErrorThreshold = 1.0
+maxOutlierRemovalIterations = 3
+maxNormalizedReprojectionError = 2
+minImageInlierPct = 0.5
+minImageNum = 4
 
 class CalibrationModel(QObject):
     log_message = pyqtSignal(str)
@@ -166,6 +172,9 @@ class CalibrationModel(QObject):
             self.error_occurred.emit("Error", "No images loaded.")
             return
 
+        if len(self.loaded_images) < minImageNum:
+            self.error_occurred.emit("Error", "Insufficient number of images for calibration. Please load more images.")
+
         all_corners, all_ids, image_size = [], [], None
         for i, (corners, ids) in enumerate(self.detected_corners):
             if corners is not None and ids is not None and len(corners) > 3:
@@ -184,9 +193,39 @@ class CalibrationModel(QObject):
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 1000, 1e-9)
             (retval, cam_mat, dist_coeffs, rvecs, tvecs,
              std_int, std_ext, per_view) = cv2.aruco.calibrateCameraCharucoExtended(
-                charucoCorners=all_corners, charucoIds=all_ids,
-                board=self.charuco_board, imageSize=image_size,
+                charucoCorners=all_corners, charucoIds=all_ids, board=self.charuco_board, imageSize=image_size,
                 cameraMatrix=None, distCoeffs=None, criteria=criteria)
+
+            nImagesInUse = len(self.loaded_images)
+            keepImgIdx = np.arange(nImagesInUse)
+            if retval > reprojectionErrorThreshold:
+                self.log_message.emit(f"Reprojection error ({retval:.4}) > allowed threshold "
+                                      f"({reprojectionErrorThreshold:.4})... Removing outilers")
+
+                # outlier removal based on per view reprojection error
+                for itr in range(maxOutlierRemovalIterations):
+                    # computing normalized per view reprojection error values
+                    perViewMedian = np.median(per_view)
+                    perViewMAD = np.median(np.abs(per_view - perViewMedian))
+                    normPerView = np.abs(per_view.reshape((-1, )) - perViewMedian) / (1.428 * perViewMAD)
+
+                    # keeping images with small normalized reprojection errors
+                    keepImgIdx = keepImgIdx[np.nonzero(normPerView < maxNormalizedReprojectionError)[0]]
+
+                    # terminating if no images were removed from previous iteration or if too many images were removed
+                    if (keepImgIdx.shape[0] == nImagesInUse or keepImgIdx.shape[0] < minImageNum or
+                        keepImgIdx.shape[0] <= minImageInlierPct * len(self.loaded_images)):
+                        break
+
+                    nImagesInUse = keepImgIdx.shape[0]  # updating number of images for calibration
+
+                    # running calibration again with remaining images
+                    keep_corners = list(map(lambda idx: all_corners[idx], keepImgIdx))
+                    keep_ids = list(map(lambda idx: all_ids[idx], keepImgIdx))
+                    (retval, cam_mat, dist_coeffs, rvecs, tvecs,
+                     std_int, std_ext, per_view) = cv2.aruco.calibrateCameraCharucoExtended(
+                        charucoCorners=keep_corners, charucoIds=keep_ids, board=self.charuco_board,
+                        imageSize=image_size, cameraMatrix=None, distCoeffs=None, criteria=criteria)
 
             self.camera_matrix = cam_mat
             self.dist_coeffs = dist_coeffs

@@ -11,3 +11,6 @@
 /.idea
 /assets/__pycache__
 assets/_gen_screenshots.py
+/assets/carousel/
+/assets/linkedin_carousel.pdf
+/assets/_gen_carousel.py
