@@ -40,7 +40,8 @@ class QTextEditLogger(QObject):
         if text:
             timestamp = datetime.datetime.now().strftime("[%H:%M:%S]")
             color = COLORS["text2"]
-            if "error" in text.lower():
+            lowered = text.lower()
+            if "error" in lowered and "reprojection error" not in lowered:
                 color = COLORS["error"]
             elif "warning" in text.lower():
                 color = COLORS["warning"]
@@ -60,12 +61,12 @@ class QTextEditLogger(QObject):
 
 
 class CalibrationView(QWidget):
-    load_requested           = pyqtSignal()
-    calibrate_requested      = pyqtSignal()
-    save_requested           = pyqtSignal()
-    clear_all_requested      = pyqtSignal()
+    load_requested = pyqtSignal()
+    calibrate_requested = pyqtSignal()
+    save_requested = pyqtSignal()
+    clear_all_requested = pyqtSignal()
     clear_selected_requested = pyqtSignal()
-    image_selected           = pyqtSignal(int)
+    image_selected = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -151,18 +152,18 @@ class CalibrationView(QWidget):
         middle_panel = QVBoxLayout()
         middle_panel.addWidget(QLabel("Loaded Images"))
         self._list_loaded = QListView()
-        self._list_model  = QStandardItemModel(self._list_loaded)
+        self._list_model = QStandardItemModel(self._list_loaded)
         self._list_loaded.setModel(self._list_model)
         self._list_loaded.setItemDelegate(CenteredListDelegate(self._list_loaded))
         self._list_loaded.selectionModel().selectionChanged.connect(self._on_selection_changed)
         middle_panel.addWidget(self._list_loaded)
 
-        self._btn_clear_all      = QPushButton("Clear All")
+        self._btn_clear_all = QPushButton("Clear All")
         self._btn_clear_selected = QPushButton("Clear Selected")
         middle_panel.addWidget(self._btn_clear_all)
         middle_panel.addWidget(self._btn_clear_selected)
 
-        results_group  = QGroupBox("Calibration Results")
+        results_group = QGroupBox("Calibration Results")
         results_layout = QGridLayout()
         self._result_fields = {}
         for i, label_text in enumerate(["fx", "fy", "ppx", "ppy", "K1", "K2", "K3", "P1", "P2"]):
@@ -185,9 +186,9 @@ class CalibrationView(QWidget):
 
         # --- Main Layout ---
         main_layout = QHBoxLayout()
-        main_layout.addLayout(left_panel,   stretch=1)
+        main_layout.addLayout(left_panel, stretch=1)
         main_layout.addLayout(middle_panel, stretch=1)
-        main_layout.addLayout(right_panel,  stretch=2)
+        main_layout.addLayout(right_panel, stretch=2)
         self.setLayout(main_layout)
         self.setWindowTitle("Camera Calibration GUI for Students of Photogrammetry 1 (014843)")
         self.setWindowIcon(QIcon(icon_path))
@@ -207,28 +208,37 @@ class CalibrationView(QWidget):
     # ------------------------------------------------------------------
     # Input getters
     # ------------------------------------------------------------------
+    def get_squares_x(self):
+        return self._txt_x.text()
 
-    def get_squares_x(self):     return self._txt_x.text()
-    def get_squares_y(self):     return self._txt_y.text()
-    def get_square_length(self): return self._txt_square_len.text()
-    def get_marker_length(self): return self._txt_marker_len.text()
-    def get_dict_name(self):     return self._cmb_dict.currentText()
-    def get_is_legacy(self):     return self._chk_legacy.isChecked()
+    def get_squares_y(self):
+        return self._txt_y.text()
+
+    def get_square_length(self):
+        return self._txt_square_len.text()
+
+    def get_marker_length(self):
+        return self._txt_marker_len.text()
+
+    def get_dict_name(self):
+        return self._cmb_dict.currentText()
+
+    def get_is_legacy(self):
+        return self._chk_legacy.isChecked()
 
     def get_selected_rows(self):
         return [idx.row() for idx in self._list_loaded.selectedIndexes()]
 
     def get_panel_size(self, panel):
-        """Return (width, height) of the viewport for the given panel (0=left, 1=right)."""
+        """ Return (width, height) of the viewport for the given panel (0=left, 1=right). """
         gv = self._gv_image1 if panel == 0 else self._gv_image2
         return gv.viewport().width(), gv.viewport().height()
 
     # ------------------------------------------------------------------
     # Display / update methods
     # ------------------------------------------------------------------
-
     def set_defaults(self, cfg):
-        """Populate input fields from a config dict."""
+        """Populate input fields from a config dict. """
         if not cfg:
             return
         self._txt_x.setText(str(cfg.get("nSquaresX", "")))
@@ -253,7 +263,7 @@ class CalibrationView(QWidget):
         self._list_model.clear()
 
     def show_results(self, values):
-        """Fill the calibration result fields from a {key: float} dict."""
+        """ Fill the calibration result fields from a {key: float} dict. """
         for key, val in values.items():
             if key in self._result_fields:
                 self._result_fields[key].setText(f"{val:.6f}")
@@ -263,7 +273,7 @@ class CalibrationView(QWidget):
             field.clear()
 
     def show_image(self, img, panel, scale_already_applied=False):
-        """Display an OpenCV image in the given panel (0=left, 1=right)."""
+        """ Display an OpenCV image in the given panel (0=left, 1=right). """
         gv = self._gv_image1 if panel == 0 else self._gv_image2
         self._show_image_in_graphicsview(img, gv, scale_already_applied)
 
@@ -283,7 +293,6 @@ class CalibrationView(QWidget):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-
     def _show_image_in_graphicsview(self, img, view, _scale_already_applied=False):
         try:
             if len(img.shape) == 2:
@@ -310,15 +319,21 @@ class CalibrationView(QWidget):
         if scene:
             scene.clear()
 
-    def _save_log_to_file(self):
+    def set_log_save_dir(self, target_dir):
+        """ Remember where the calibration results were saved so the log is written
+        alongside them when the window closes. """
+        self._log_save_dir = target_dir
+
+    def _save_log_to_file(self, target_dir=None):
         try:
             log_text = self._txt_log.toPlainText()
             if not log_text.strip():
                 return
-            logs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
-            os.makedirs(logs_path, exist_ok=True)
-            timestamp    = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            log_filename = os.path.join(logs_path, f"calibration_log_{timestamp}.log")
+            if target_dir is None:
+                target_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+            os.makedirs(target_dir, exist_ok=True)
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_filename = os.path.join(target_dir, f"calibration_log_{timestamp}.log")
             with open(log_filename, "w", encoding="utf-8") as f:
                 f.write(log_text)
             print(f"Log saved to {log_filename}")
@@ -326,5 +341,5 @@ class CalibrationView(QWidget):
             print(f"Error saving log file: {e}")
 
     def closeEvent(self, event):
-        self._save_log_to_file()
+        self._save_log_to_file(getattr(self, "_log_save_dir", None))
         event.accept()

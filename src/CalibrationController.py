@@ -1,3 +1,4 @@
+import os
 import traceback
 import cv2
 import matplotlib
@@ -18,7 +19,7 @@ class CalibrationController(QObject):
     def __init__(self, model: CalibrationModel, view: CalibrationView):
         super().__init__()
         self._model = model
-        self._view  = view
+        self._view = view
         self._connect_view_signals()
         self._connect_model_signals()
         self._apply_config()
@@ -26,7 +27,6 @@ class CalibrationController(QObject):
     # ------------------------------------------------------------------
     # Signal wiring
     # ------------------------------------------------------------------
-
     def _connect_view_signals(self):
         self._view.load_requested.connect(self._on_load_images)
         self._view.calibrate_requested.connect(self._on_run_calibration)
@@ -49,16 +49,14 @@ class CalibrationController(QObject):
     # ------------------------------------------------------------------
     # Slots for View signals
     # ------------------------------------------------------------------
-
     def _on_load_images(self):
         try:
-            squares_x     = int(self._view.get_squares_x())
-            squares_y     = int(self._view.get_squares_y())
+            squares_x = int(self._view.get_squares_x())
+            squares_y = int(self._view.get_squares_y())
             square_length = float(self._view.get_square_length())
             marker_length = float(self._view.get_marker_length())
         except ValueError:
-            self._view.show_error(
-                "Error",
+            self._view.show_error("Error",
                 "Invalid numeric input. Please enter integer values for number of squares "
                 "and numeric values for lengths.")
             return
@@ -116,19 +114,19 @@ class CalibrationController(QObject):
                 return
 
             orig_h, orig_w = img.shape[:2]
-            display_img    = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+            display_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
             target_width = max(1, self._view.get_panel_size(0)[0])
 
             if orig_w != target_width:
-                scale         = target_width / float(orig_w)
+                scale = target_width / float(orig_w)
                 target_height = int(round(orig_h * scale))
-                scaled_img    = cv2.resize(display_img, (target_width, target_height),
-                                           interpolation=cv2.INTER_LINEAR)
+                scaled_img = cv2.resize(display_img, (target_width, target_height),
+                                        interpolation=cv2.INTER_LINEAR)
             else:
-                scale         = 1.0
+                scale = 1.0
                 target_height = orig_h  # bug fix: always define target_height
-                scaled_img    = display_img.copy()
+                scaled_img = display_img.copy()
 
             # Draw detected ChArUco corners
             if index < len(self._model.detected_corners):
@@ -152,7 +150,7 @@ class CalibrationController(QObject):
             # Show undistorted image if calibration is available
             if self._model.camera_matrix is not None and self._model.dist_coeffs is not None:
                 try:
-                    undistorted   = cv2.undistort(img, self._model.camera_matrix, self._model.dist_coeffs)
+                    undistorted = cv2.undistort(img, self._model.camera_matrix, self._model.dist_coeffs)
                     scaled_undist = cv2.resize(undistorted, (target_width, target_height),
                                                interpolation=cv2.INTER_LINEAR)
                     self._view.show_image(cv2.cvtColor(scaled_undist, cv2.COLOR_GRAY2BGR),
@@ -166,7 +164,6 @@ class CalibrationController(QObject):
     # ------------------------------------------------------------------
     # Slots for Model signals
     # ------------------------------------------------------------------
-
     def _on_images_loaded(self, filenames):
         self._view.clear_image_list()
         for name in filenames:
@@ -176,29 +173,28 @@ class CalibrationController(QObject):
     def _on_calibration_done(self, results):
         self._view.show_results(results)
         rms = self._model.reprojection_error
-        n   = len(self._model.rvecs) if self._model.rvecs is not None else 0
-        self._view.show_info(
-            "Calibration Complete",
+        n = len(self._model.rvecs) if self._model.rvecs is not None else 0
+        self._view.show_info("Calibration Complete",
             f"Calibration successful!\n\nReprojection Error: {rms:.3f}\nImages used: {n}")
 
     def _on_save_done(self, path):
+        self._view.set_log_save_dir(os.path.dirname(path))
         self._view.show_info("Save Calibration", f"Calibration saved successfully to:\n{path}")
 
     # ------------------------------------------------------------------
     # Matplotlib scatter plot of all detected corners
     # ------------------------------------------------------------------
-
     def _render_all_corners_plot(self):
         try:
             if not self._model.loaded_images or not self._model.detected_corners:
                 return
 
-            h, w           = self._model.loaded_images[0].shape[:2]
-            gv_w, gv_h     = self._view.get_panel_size(1)
-            gv_w           = max(200, gv_w)
-            gv_h           = max(200, gv_h)
+            h, w = self._model.loaded_images[0].shape[:2]
+            gv_w, gv_h = self._view.get_panel_size(1)
+            gv_w = max(200, gv_w)
+            gv_h = max(200, gv_h)
 
-            dpi    = 100
+            dpi = 100
             fig, ax = plt.subplots(figsize=(gv_w / dpi, gv_h / dpi), dpi=dpi)
             ax.set_facecolor("white")
             ax.set_xlim(0, w)

@@ -2,37 +2,36 @@ import os
 import cv2
 import json
 import traceback
-import numpy as np
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
 class CalibrationModel(QObject):
-    log_message      = pyqtSignal(str)
-    images_loaded    = pyqtSignal(list)
+    log_message = pyqtSignal(str)
+    images_loaded = pyqtSignal(list)
     calibration_done = pyqtSignal(dict)
-    save_done        = pyqtSignal(str)
-    error_occurred   = pyqtSignal(str, str)
+    save_done = pyqtSignal(str)
+    error_occurred = pyqtSignal(str, str)
 
     def __init__(self):
         super().__init__()
-        self.loaded_images      = []
-        self.detected_markers   = []
-        self.detected_corners   = []
-        self.image_names        = []
-        self.charuco_board      = None
-        self._aruco_dict        = None
-        self.camera_matrix      = None
-        self.dist_coeffs        = None
+        self.loaded_images  = []
+        self.detected_markers = []
+        self.detected_corners = []
+        self.image_names = []
+        self.charuco_board = None
+        self._aruco_dict = None
+        self.camera_matrix = None
+        self.dist_coeffs = None
         self.reprojection_error = None
-        self.rvecs              = None
-        self.tvecs              = None
+        self.rvecs = None
+        self.tvecs = None
         self.std_dev_intrinsics = None
         self.std_dev_extrinsics = None
-        self.per_view_errors    = None
-        self.last_image_dir     = ""
+        self.per_view_errors = None
+        self.last_image_dir = ""
 
     def load_config(self):
-        """Load config/config.json and return as dict. Returns {} on failure."""
+        """ Load config/config.json and return as dict. Returns {} on failure. """
         config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "config.json")
         if not os.path.isfile(config_path):
             self.log_message.emit("No config.json found — using default GUI values.")
@@ -51,7 +50,7 @@ class CalibrationModel(QObject):
             return {}
 
     def initialize_board(self, squares_x, squares_y, square_length, marker_length, dict_name, is_legacy):
-        """Create ArUco dictionary and CharucoBoard. Returns True on success."""
+        """ Create ArUco dictionary and CharucoBoard. Returns True on success. """
         try:
             self._aruco_dict = self._get_aruco_dictionary(dict_name)
         except Exception as e:
@@ -70,7 +69,7 @@ class CalibrationModel(QObject):
         return True
 
     def load_images(self, file_paths):
-        """Load images and detect ChArUco corners. Emits images_loaded on completion."""
+        """ Load images and detect ChArUco corners. Emits images_loaded on completion. """
         self.loaded_images.clear()
         self.detected_markers.clear()
         self.detected_corners.clear()
@@ -156,7 +155,7 @@ class CalibrationModel(QObject):
         self.images_loaded.emit(list(self.image_names))
 
     def run_calibration(self):
-        """Run camera calibration. Emits calibration_done on success."""
+        """ Run camera calibration. Emits calibration_done on success. """
         if self.charuco_board is None:
             self.error_occurred.emit("Error", "No ChArUco board initialized. Please load images first.")
             return
@@ -189,30 +188,30 @@ class CalibrationModel(QObject):
                 board=self.charuco_board, imageSize=image_size,
                 cameraMatrix=None, distCoeffs=None, criteria=criteria)
 
-            self.camera_matrix      = cam_mat
-            self.dist_coeffs        = dist_coeffs
+            self.camera_matrix = cam_mat
+            self.dist_coeffs = dist_coeffs
             self.reprojection_error = retval
-            self.rvecs              = rvecs
-            self.tvecs              = tvecs
+            self.rvecs = rvecs
+            self.tvecs = tvecs
             self.std_dev_intrinsics = std_int
             self.std_dev_extrinsics = std_ext
-            self.per_view_errors    = per_view
+            self.per_view_errors = per_view
 
             self.log_message.emit("Calibration completed successfully.")
-            self.log_message.emit(f"Reprojection Error: {retval}")
+            self.log_message.emit(f"Reprojection Error: {retval:.4}")
             self.log_message.emit(f"Camera Matrix:\n{cam_mat}")
             self.log_message.emit(f"Distortion Coefficients:\n{dist_coeffs}")
 
             self.calibration_done.emit({
-                "fx":  float(cam_mat[0, 0]),
-                "fy":  float(cam_mat[1, 1]),
+                "fx": float(cam_mat[0, 0]),
+                "fy": float(cam_mat[1, 1]),
                 "ppx": float(cam_mat[0, 2]),
                 "ppy": float(cam_mat[1, 2]),
-                "K1":  float(dist_coeffs[0, 0]),
-                "K2":  float(dist_coeffs[0, 1]),
-                "K3":  float(dist_coeffs[0, 4]),
-                "P1":  float(dist_coeffs[0, 2]),
-                "P2":  float(dist_coeffs[0, 3]),
+                "K1": float(dist_coeffs[0, 0]),
+                "K2": float(dist_coeffs[0, 1]),
+                "K3": float(dist_coeffs[0, 4]),
+                "P1": float(dist_coeffs[0, 2]),
+                "P2": float(dist_coeffs[0, 3]),
             })
         except Exception as e:
             tb = traceback.format_exc()
@@ -220,7 +219,7 @@ class CalibrationModel(QObject):
                                      f"An error occurred during calibration:\n{e}\n\nTraceback:\n{tb}")
 
     def save_calibration(self):
-        """Save calibration results to calibration.json in the image folder. Emits save_done on success."""
+        """ Save calibration results to calibration.json in the image folder. Emits save_done on success. """
         if self.camera_matrix is None or self.dist_coeffs is None:
             self.error_occurred.emit("Save Calibration", "No calibration results. Please run calibration first.")
             return
@@ -233,7 +232,7 @@ class CalibrationModel(QObject):
 
         try:
             os.makedirs(self.last_image_dir, exist_ok=True)
-            out_path = os.path.join(self.last_image_dir, "calibration.json")
+            out_path = self.last_image_dir +  "/calibration.json"
 
             cm = self.camera_matrix
             dc = self.dist_coeffs.flatten()
@@ -244,8 +243,8 @@ class CalibrationModel(QObject):
 
             calib_data = {
                 "intrinsics": {
-                    "focalLengthX":    float(cm[0, 0]),
-                    "focalLengthY":    float(cm[1, 1]),
+                    "focalLengthX": float(cm[0, 0]),
+                    "focalLengthY": float(cm[1, 1]),
                     "principalPointX": float(cm[0, 2]),
                     "principalPointY": float(cm[1, 2])
                 },
@@ -261,7 +260,7 @@ class CalibrationModel(QObject):
                     }
                 },
                 "calibrationSummary": {
-                    "rmsError":      float(self.reprojection_error) if self.reprojection_error is not None else None,
+                    "rmsError": float(self.reprojection_error) if self.reprojection_error is not None else None,
                     "numImagesUsed": int(len(self.rvecs)) if self.rvecs is not None else 0
                 }
             }
@@ -292,7 +291,7 @@ class CalibrationModel(QObject):
                                      f"Failed to save calibration:\n{e}\n\nTraceback:\n{tb}")
 
     def remove_images(self, indexes):
-        """Remove images at the given indexes (processed descending to keep indexes valid)."""
+        """ Remove images at the given indexes (processed descending to keep indexes valid). """
         for i in sorted(indexes, reverse=True):
             if 0 <= i < len(self.loaded_images):
                 del self.loaded_images[i]
@@ -302,22 +301,21 @@ class CalibrationModel(QObject):
                     del self.image_names[i]
 
     def clear_all(self):
-        """Clear all loaded data and calibration results."""
+        """ Clear all loaded data and calibration results. """
         self.loaded_images.clear()
         self.detected_markers.clear()
         self.detected_corners.clear()
         self.image_names.clear()
-        self.camera_matrix      = None
-        self.dist_coeffs        = None
+        self.camera_matrix = None
+        self.dist_coeffs = None
         self.reprojection_error = None
-        self.rvecs              = None
-        self.tvecs              = None
+        self.rvecs = None
+        self.tvecs = None
         self.log_message.emit("All images and associated data cleared.")
 
     # ------------------------------------------------------------------
     # Private OpenCV helpers (unchanged logic, moved from CalibrationGui)
     # ------------------------------------------------------------------
-
     def _get_aruco_dictionary(self, dict_name):
         if hasattr(cv2.aruco, "getPredefinedDictionary"):
             enum_val = getattr(cv2.aruco, dict_name, None)
