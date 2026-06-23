@@ -115,14 +115,14 @@ If the calibration process is to be repeated multiple times with the same ChArUc
 | `isLegacy` | `bool` | `true` | Set `true` for boards made with OpenCV < 4.6.0 |
 
 <p align="center">
-    <img src="assets/config.png" alt="Board Configurations" width="200">
+    <img src="assets/config.png" alt="Board Configurations" width="300">
 </p>
 
 > For boards generated using older versions of OpenCV (before 4.6.0), make sure to set `isLegacy` to `true`.
 
 To make sure the right dimensions are used, please refer to the following image:
 <p align="center">
-    <img src="assets/board_dimensions_hero.png" alt="Board Dimensions" width="300">
+    <img src="assets/board_dimensions_hero.png" alt="Board Dimensions" width="500">
 </p>
 
 #### 🧐 1.2 Outlier removal configuration
