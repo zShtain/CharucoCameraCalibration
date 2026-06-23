@@ -114,9 +114,16 @@ If the calibration process is to be repeated multiple times with the same ChArUc
 | `dictName` | `string` | `DICT_6X6_250` | ArUco dictionary name |
 | `isLegacy` | `bool` | `true` | Set `true` for boards made with OpenCV < 4.6.0 |
 
-![Board Configurations](assets/config.png)
+<p align="center">
+    <img src="assets/config.png" alt="Board Configurations" width="200">
+</p>
 
 > For boards generated using older versions of OpenCV (before 4.6.0), make sure to set `isLegacy` to `true`.
+
+To make sure the right dimensions are used, please refer to the following image:
+<p align="center">
+    <img src="assets/board_dimensions_hero.png" alt="Board Dimensions" width="300">
+</p>
 
 #### 🧐 1.2 Outlier removal configuration
 
